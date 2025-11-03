@@ -2,10 +2,12 @@ name: Fetch Google Sheet Data
 
 on:
   schedule:
-    # This runs the "robot" every 30 minutes
     - cron: '*/30 * * * *'
-  # This adds a button on the "Actions" tab to run it manually
   workflow_dispatch:
+
+# THIS IS THE NEW PART THAT FIXES THE ERROR
+permissions:
+  contents: write
 
 jobs:
   fetch-and-commit:
@@ -15,12 +17,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # 2. Fetches data using your secret URL and saves it as data.json
+      # 2. Runs the command to fetch data and save it as data.json
       - name: Fetch data from Google Apps Script
         run: |
           curl -L "${{ secrets.APPS_SCRIPT_URL }}" -o data.json
 
-      # 3. Automatically saves the new data.json file back to your repository
+      # 3. This magical action checks if data.json changed.
+      #    It will now have permission to commit.
       - name: Commit new data
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
