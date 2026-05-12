@@ -1,33 +1,41 @@
 name: Fetch Google Sheet Data
+
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ← This forces Node 24 now
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch:
+    - cron: '*/30 * * * *'     # Every 30 minutes
+  workflow_dispatch:           # Allow manual trigger
 
-# THIS IS THE NEW PART THAT FIXES THE ERROR
+# Prevents multiple builds running at the same time (fixes your main error)
+concurrency:
+  group: fetch-google-sheet-data
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
 jobs:
   fetch-and-commit:
     runs-on: ubuntu-latest
+    
     steps:
-      # 1. Checks out your repository code
       - name: Check out repository
         uses: actions/checkout@v6
 
-      # 2. Runs the command to fetch data and save it as data.json
       - name: Fetch data from Google Apps Script
         run: |
-          curl -L "${{ secrets.APPS_SCRIPT_URL }}" -o data.json
+          echo "Fetching latest data from Google Sheet..."
+          curl -L -f "${{ secrets.APPS_SCRIPT_URL }}" -o data.json || echo "❌ Failed to fetch data"
+          
+          # Optional: Show first few lines for debugging
+          echo "=== First 10 lines of data.json ==="
+          head -n 10 data.json || echo "data.json is empty or not generated"
 
-      # 3. This magical action checks if data.json changed.
-      #    It will now have permission to commit.
-      - name: Commit new data
+      - name: Commit new data (if changed)
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Update: Fetched new data from Google Sheet"
           file_pattern: data.json
-        
+          branch: main
