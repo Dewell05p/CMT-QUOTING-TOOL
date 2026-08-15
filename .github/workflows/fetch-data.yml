@@ -27,7 +27,7 @@ jobs:
       - name: Fetch data from Google Apps Script
         run: |
           echo "Fetching latest data from Google Sheet..."
-          curl -L -f "${{ secrets.APPS_SCRIPT_URL }}" -o data.json || echo "❌ Failed to fetch data"
+          curl -L -f "${{ secrets.APPS_SCRIPT_URL }}?cb=$(date +%s)" -o data.json || echo "❌ Failed to fetch data"
           
           # Optional: Show first few lines for debugging
           echo "=== First 10 lines of data.json ==="
